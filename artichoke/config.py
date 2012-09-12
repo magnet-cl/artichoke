@@ -1,6 +1,6 @@
 from artichoke.helpers import read
 from ConfigParser import ConfigParser, DuplicateSectionError
-from errors import InvalidConfig
+from errors import InvalidConfig, MissingConfigFile
 import re
 
 
@@ -20,8 +20,9 @@ class DefaultManager(object):
             func_name = "%s__%s" % (section, variable)
             return getattr(self, func_name)()
         except AttributeError:
-            query = "Enter value for  %s.%s: " % (section, variable)
+            query = "Enter value for %s.%s: " % (section, variable)
             return read(query)
+
 
 class Config(object):
 
@@ -38,8 +39,10 @@ class Config(object):
         self._default_manager.config = self
         self.add_section("Global")
 
-        if config_file is not None:
-            self.load_ini(config_file)
+        self.config_file = config_file
+
+        if self.config_file is not None:
+            self.load_ini(self.config_file)
 
         self.modified = False
 
@@ -49,7 +52,8 @@ class Config(object):
     def add_section(self, section_name):
         self._validate_section_name(section_name)
         if section_name not in self._sections:
-            self._sections[section_name] = ConfigSection(name=section_name, config=self)
+            self._sections[section_name] = ConfigSection(name=section_name,
+                                                         config=self)
         try:
             self._parser.add_section(section_name)
         except DuplicateSectionError:
@@ -59,7 +63,14 @@ class Config(object):
         sections = sorted(self._sections.items())
         return filter(lambda x: x[0] != "Global", sections)
 
-    def save(self, output_filename):
+    #TODO: Implement remote configuration save
+    def save(self, output_filename=None):
+        if output_filename is None:
+            if self.config_file is None:
+                msg = "You need to specify the output_filename parameter"
+                raise MissingConfigFile(msg)
+            output_filename = self.config_file
+
         with open(output_filename, 'w') as f:
             self._parser.write(f)
 
@@ -76,17 +87,19 @@ class Config(object):
 
     def _validate_section_name(self, name):
         if name[0] == '_':
-            msg = "Section %s collides with a global variable of the same name."
+            msg = "Section %s cannot start with an underscore"
             msg %= name
             raise InvalidConfig(msg)
 
         if name is not "Global" and name in self._sections['Global']:
-            msg = "Section %s collides with a global variable of the same name."
+            msg = "Section %s collides with a global variable of the same name"
+            msg %= name
             raise InvalidConfig(msg)
 
     def _validate_global_variable(self, name):
         if name in self._sections:
-            msg = "Section %s collides with a global variable of the same name."
+            msg = "Section %s collides with a global variable of the same name"
+            msg %= name
             raise InvalidConfig(msg)
 
     def __getattr__(self, name):
