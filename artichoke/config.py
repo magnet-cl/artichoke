@@ -1,3 +1,4 @@
+from artichoke.helpers import read
 from ConfigParser import ConfigParser, DuplicateSectionError
 from errors import InvalidConfig
 import re
@@ -19,8 +20,8 @@ class DefaultManager(object):
             func_name = "%s__%s" % (section, variable)
             return getattr(self, func_name)()
         except AttributeError:
-            return None
-
+            query = "Enter value for  %s.%s: " % (section, variable)
+            return read(query)
 
 class Config(object):
 
