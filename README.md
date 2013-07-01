@@ -2,7 +2,13 @@ Wrapper for Python ConfigParser.
 
 ## Installation
 
-    git clone https://github.com/juanique/artichoke
+If you are installing with pip, you can use the following command:
+
+    pip install git+git://github.com/magnet-cl/artichoke.git@master
+
+You can also clone the project:
+
+    git clone https://github.com/magnet-cl/artichoke
     cd artichoke
     python setup.py install
 
